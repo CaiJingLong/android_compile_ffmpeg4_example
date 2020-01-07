@@ -13,6 +13,12 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <unistd.h>
 
+void vlog(const char *fmt, ...) {
+    va_list list;
+    va_start(list, fmt);
+    __android_log_vprint(ANDROID_LOG_INFO, "ffmpeg", fmt, list);
+    va_end(list);
+}
 
 void logToAndroid(void *ptr, int level, const char *fmt, va_list vl) {
     if (level == AV_LOG_INFO) {
@@ -92,11 +98,20 @@ AVFrame *getFirstFrame(AVFormatContext *context, int videoIndex) {
         av_packet_unref(&pkt);
     }
 
+    av_log(nullptr, AV_LOG_INFO, "视频帧宽高: %d x %d", frame->width, frame->height);
+
     return frame;
 }
 
 void convertFrameAndSaveToFile(AVFrame *frame, const char *url) {
+    int ret;
     AVCodec *encoder = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
+
+    if (!encoder) {
+        vlog("没有找到jpg编码器");
+        return;
+    }
+
     AVCodecContext *encoderContext = avcodec_alloc_context3(encoder);
 
     encoderContext->width = frame->width;
@@ -110,7 +125,14 @@ void convertFrameAndSaveToFile(AVFrame *frame, const char *url) {
     avcodec_open2(encoderContext, encoder, nullptr);
 
     AVFormatContext *outputContext = nullptr;
-    avformat_alloc_output_context2(&outputContext, nullptr, nullptr, url);
+    AVOutputFormat *fmt = av_guess_format("mjpeg", nullptr, nullptr);
+
+    ret = avformat_alloc_output_context2(&outputContext, fmt, nullptr, url);
+    if (ret) {
+        const char *errorMsg = av_err2str(ret);
+        vlog("申请outputContext空间失败, %s", errorMsg);
+        return;
+    }
     avio_open(&outputContext->pb, url, AVIO_FLAG_WRITE);
     AVStream *outputStream = avformat_new_stream(outputContext, nullptr);
 
@@ -158,6 +180,9 @@ Java_top_kikt_ffmpeg_1sdl_1example_FFmpeg_getFirstImage(JNIEnv *env, jclass claz
     }
 
     AVFrame *pFrame = getFirstFrame(context, videoIndex);
+
+    av_log(nullptr, AV_LOG_INFO, "视频帧宽高: %d, %d", pFrame->width, pFrame->height);
+//
     // 读取第一帧
     if (pFrame) {
         convertFrameAndSaveToFile(pFrame, cDst);

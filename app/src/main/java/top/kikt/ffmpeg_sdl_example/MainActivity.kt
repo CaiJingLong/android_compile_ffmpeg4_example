@@ -16,10 +16,14 @@ class MainActivity : AppCompatActivity() {
         sample_button.setOnClickListener {
             FFmpeg.dumpInfo("http://media.w3.org/2010/05/sintel/trailer.mp4")
             val tmpFile = File(filesDir, "tmp.jpg")
-            FFmpeg.getFirstImage(
-                "http://media.w3.org/2010/05/sintel/trailer.mp4",
-                tmpFile.absolutePath
-            )
+            try {
+                FFmpeg.getFirstImage(
+                    "http://media.w3.org/2010/05/sintel/trailer.mp4",
+                    tmpFile.absolutePath
+                )
+            } catch (e: Exception) {
+                Log.i("MainActivity", "发生错误", e)
+            }
 
             Log.i("MainActivity", tmpFile.length().toString())
 
