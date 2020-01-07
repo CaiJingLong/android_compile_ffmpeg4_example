@@ -1,7 +1,7 @@
 package top.kikt.ffmpeg_sdl_example
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -11,7 +11,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         sample_text.setOnClickListener {
-            FFmpeg.dumpInfo("https://media.w3.org/2010/05/sintel/trailer.mp4")
+            FFmpeg.dumpInfo("http://media.w3.org/2010/05/sintel/trailer.mp4")
         }
 
     }

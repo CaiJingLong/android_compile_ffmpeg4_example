@@ -16,7 +16,11 @@ extern "C" {
 #endif
 
 extern "C" void logToAndroid(void *ptr, int level, const char *fmt, va_list vl) {
-    __android_log_vprint(ANDROID_LOG_INFO, "ffmpeg", fmt, vl);
+    if (level == AV_LOG_INFO) {
+        __android_log_vprint(ANDROID_LOG_INFO, "ffmpeg", fmt, vl);
+    } else if (level == AV_LOG_DEBUG) {
+        __android_log_vprint(ANDROID_LOG_DEBUG, "ffmpeg", fmt, vl);
+    }
 }
 
 extern "C" JNIEXPORT jstring JNICALL

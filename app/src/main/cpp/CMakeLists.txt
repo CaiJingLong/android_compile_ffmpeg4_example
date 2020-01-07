@@ -27,9 +27,9 @@ add_library( # Sets the name of the library.
 # you want to add. CMake verifies that the library exists before
 # completing its build.
 
-file(GLOB FFMPEG_LIBS ../../../libs/${ANDROID_ABI}/*.so)
+file(GLOB FFMPEG_LIBS ../../../libs/${CMAKE_ANDROID_ARCH_ABI}/*.so)
 
-message("cmake:  ${FFMPEG_LIBS}")
+message("ffmpeg libs :  ${FFMPEG_LIBS}")
 
 find_library( # Sets the name of the path variable.
         log-lib
