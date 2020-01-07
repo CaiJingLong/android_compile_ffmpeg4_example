@@ -8,4 +8,6 @@ public class FFmpeg {
 
     public static native void dumpInfo(String url);
 
+    public static native void getFirstImage(String url, String dst);
+
 }
