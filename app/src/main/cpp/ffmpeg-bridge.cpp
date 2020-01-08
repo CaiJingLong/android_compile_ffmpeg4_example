@@ -27,6 +27,10 @@ void logToAndroid(void *ptr, int level, const char *fmt, va_list vl) {
 //        __android_log_vprint(ANDROID_LOG_DEBUG, "ffmpeg", fmt, vl);
     } else if (level == AV_LOG_WARNING) {
         __android_log_vprint(ANDROID_LOG_WARN, "ffmpeg", fmt, vl);
+    } else if (level == AV_LOG_ERROR) {
+        __android_log_vprint(ANDROID_LOG_ERROR, "ffmpeg", fmt, vl);
+    } else if (level == AV_LOG_VERBOSE) {
+//        __android_log_vprint(ANDROID_LOG_VERBOSE, "ffmpeg", fmt, vl);
     }
 }
 
@@ -118,19 +122,28 @@ void convertFrameAndSaveToFile(AVFrame *frame, const char *url) {
     encoderContext->height = frame->height;
     encoderContext->time_base.num = 1;
     encoderContext->time_base.den = mjpegDen;
-    encoderContext->pix_fmt = AV_PIX_FMT_BGRA; // gif 支持
+    encoderContext->pix_fmt = AV_PIX_FMT_YUVJ420P;
     encoderContext->codec_id = encoder->id;
     encoderContext->codec_type = encoder->type;
 
-    avcodec_open2(encoderContext, encoder, nullptr);
+    ret = avcodec_open2(encoderContext, encoder, nullptr);
+    if (ret) {
+        const char *errorMsg = av_err2str(ret);
+        vlog("开启编码器失败, %s ,%d", errorMsg, ret);
+        return;
+    }
 
     AVFormatContext *outputContext = nullptr;
     AVOutputFormat *fmt = av_guess_format("mjpeg", nullptr, nullptr);
+    if (!fmt) {
+        vlog("没找到format");
+        return;
+    }
 
     ret = avformat_alloc_output_context2(&outputContext, fmt, nullptr, url);
     if (ret) {
         const char *errorMsg = av_err2str(ret);
-        vlog("申请outputContext空间失败, %s", errorMsg);
+        vlog("申请outputContext空间失败, %s, %d", errorMsg, ret);
         return;
     }
     avio_open(&outputContext->pb, url, AVIO_FLAG_WRITE);
@@ -145,15 +158,17 @@ void convertFrameAndSaveToFile(AVFrame *frame, const char *url) {
 
     avcodec_send_frame(encoderContext, frame);
 
-    AVPacket pkt;
+    AVPacket *pkt;
 
-    avcodec_receive_packet(encoderContext, &pkt);
+    pkt = av_packet_alloc();
 
-    pkt.stream_index = outputStream->index;
-    av_write_frame(outputContext, &pkt);
+    avcodec_receive_packet(encoderContext, pkt);
+
+    pkt->stream_index = outputStream->index;
+    av_write_frame(outputContext, pkt);
     av_write_trailer(outputContext);
 
-    av_packet_unref(&pkt);
+    av_packet_unref(pkt);
     avcodec_close(encoderContext);
     avio_close(outputContext->pb);
     avformat_free_context(outputContext);
@@ -162,6 +177,8 @@ void convertFrameAndSaveToFile(AVFrame *frame, const char *url) {
 JNIEXPORT void JNICALL
 Java_top_kikt_ffmpeg_1sdl_1example_FFmpeg_getFirstImage(JNIEnv *env, jclass clazz, jstring javaUrl,
                                                         jstring dst) {
+    av_log_set_callback(logToAndroid);
+
     AVFormatContext *context = nullptr;
     const char *url = env->GetStringUTFChars(javaUrl, nullptr);
 

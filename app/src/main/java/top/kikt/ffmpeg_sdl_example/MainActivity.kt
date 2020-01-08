@@ -1,5 +1,6 @@
 package top.kikt.ffmpeg_sdl_example
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -12,13 +13,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
         sample_button.setOnClickListener {
-            FFmpeg.dumpInfo("http://media.w3.org/2010/05/sintel/trailer.mp4")
             val tmpFile = File(filesDir, "tmp.jpg")
             try {
                 FFmpeg.getFirstImage(
-                    "http://media.w3.org/2010/05/sintel/trailer.mp4",
+//                    "http://media.w3.org/2010/05/sintel/trailer.mp4",
+                    "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
+//                    "http://vjs.zencdn.net/v/oceans.mp4",
                     tmpFile.absolutePath
                 )
             } catch (e: Exception) {
@@ -26,8 +27,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             Log.i("MainActivity", tmpFile.length().toString())
-
+            iv_result.setImageURI(Uri.fromFile(tmpFile))
         }
+
 
     }
 }
